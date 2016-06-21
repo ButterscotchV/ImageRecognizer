@@ -2,6 +2,7 @@ package net.dankrushen.imgrecog;
 
 import java.awt.BasicStroke;
 import java.awt.Color;
+import java.awt.Dimension;
 import java.awt.EventQueue;
 import java.awt.Graphics2D;
 import javax.swing.JFrame;
@@ -10,6 +11,7 @@ import javax.swing.JButton;
 import javax.swing.JFileChooser;
 import javax.swing.JLabel;
 import javax.swing.SwingConstants;
+import javax.swing.UIManager;
 
 import boofcv.alg.feature.detect.edge.CannyEdge;
 import boofcv.alg.feature.detect.edge.EdgeContour;
@@ -35,7 +37,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Random;
 import java.util.Map.Entry;
 import java.awt.event.ActionEvent;
 import javax.swing.JRadioButton;
@@ -43,6 +44,13 @@ import java.awt.Toolkit;
 import javax.swing.JSlider;
 import javax.swing.event.ChangeListener;
 import javax.swing.event.ChangeEvent;
+import javax.swing.JProgressBar;
+import javax.swing.JPanel;
+import java.awt.BorderLayout;
+import java.awt.GridLayout;
+import javax.swing.JTabbedPane;
+import java.awt.Component;
+import javax.swing.Box;
 
 public class ImageRecog {
 
@@ -53,6 +61,8 @@ public class ImageRecog {
 	private HashMap<String, Double> matchPer = new HashMap<String, Double>();
 	BufferedImage in;
 	BufferedImage in2;
+	BufferedImage oin = null;
+	BufferedImage oin2 = null;
 	private JFrame frmImageRecognizer;
 	private JLabel lblPath;
 	private JButton btnFind;
@@ -63,10 +73,25 @@ public class ImageRecog {
 	private JLabel lblStaticText2;
 	private JSlider sldQual;
 	private JLabel lblQual;
-	
+	private JSlider sldDif;
+	private JLabel lblDif;
+	private JRadioButton method3;
+	private JLabel lblDe;
+	private JSlider sldDebug;
+	private JLabel lblDebugMode;
+	private JProgressBar progressBar;
+	private JPanel diffPan;
+	private JPanel debugPan;
+	private JPanel optionPan;
+	private JPanel settingsPan;
+	private JLabel lblDone;
+	private JTabbedPane tabbedPane;
+	private JPanel Main;
+	private Component verticalStrut;
+
 	//TODO Add a way to automatically sort the images. This can be done by finding similar images (using ImageCompare), and grouping them into folders. You can name the folders afterwards or I might add a way to also automatically name the folders using the Internet.
 
-	/**
+	/*
 	 * Methods
 	 */
 	public static BufferedImage fitBinaryImage(BufferedImage in) {
@@ -93,16 +118,18 @@ public class ImageRecog {
 		Graphics2D g2 = polygon.createGraphics();
 		g2.setStroke(new BasicStroke(2));
 
+		g2.setColor(Color.WHITE);
+
 		for( Contour c : contours ) {
 			// Fit the polygon to the found external contour.  Note loop = true
 			List<PointIndex_I32> vertexes = ShapeFittingOps.fitPolygon(c.external,true,
 					splitFraction, minimumSideFraction,100);
 
-			g2.setColor(Color.RED);
+			//g2.setColor(Color.RED);
 			VisualizeShapes.drawPolygon(vertexes,true,g2);
 
 			// handle internal contours now
-			g2.setColor(Color.BLUE);
+			//g2.setColor(Color.BLUE);
 			for( List<Point2D_I32> internal : c.internal ) {
 				vertexes = ShapeFittingOps.fitPolygon(internal,true, splitFraction, minimumSideFraction,100);
 				VisualizeShapes.drawPolygon(vertexes,true,g2);
@@ -130,11 +157,13 @@ public class ImageRecog {
 		Graphics2D g2 = displayImage.createGraphics();
 		g2.setStroke(new BasicStroke(2));
 
+		g2.setColor(Color.WHITE);
+
 		// used to select colors for each line
-		Random rand = new Random(234);
+		//Random rand = new Random(234);
 
 		for( EdgeContour e : contours ) {
-			g2.setColor(new Color(rand.nextInt()));
+			//g2.setColor(new Color(rand.nextInt()));
 
 			for(EdgeSegment s : e.segments ) {
 				// fit line segments to the point sequence.  Note that loop is false
@@ -166,6 +195,7 @@ public class ImageRecog {
 	public static void main(String[] args) {
 		EventQueue.invokeLater(new Runnable() {
 			public void run() {
+				try {UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());} catch (Exception e) {}
 				try {
 					ImageRecog window = new ImageRecog();
 					window.frmImageRecognizer.setVisible(true);
@@ -190,12 +220,23 @@ public class ImageRecog {
 		frmImageRecognizer = new JFrame();
 		frmImageRecognizer.setIconImage(Toolkit.getDefaultToolkit().getImage(ImageRecog.class.getResource("/net/dankrushen/imgrecog/ImgRecogIcon.png")));
 		frmImageRecognizer.setTitle("Image Recognizer");
-		frmImageRecognizer.setResizable(false);
-		frmImageRecognizer.setBounds(100, 100, 450, 300);
+		frmImageRecognizer.setBounds(100, 100, 400, 230);
+		frmImageRecognizer.setMinimumSize(new Dimension(400, 230));
 		frmImageRecognizer.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		frmImageRecognizer.getContentPane().setLayout(null);
+		frmImageRecognizer.setLocationRelativeTo(null);
+		frmImageRecognizer.getContentPane().setLayout(new GridLayout(0, 1, 0, 0));
+
+		tabbedPane = new JTabbedPane(JTabbedPane.TOP);
+		frmImageRecognizer.getContentPane().add(tabbedPane);
+
+		Main = new JPanel();
+		tabbedPane.addTab("Main", null, Main, null);
+		Main.setLayout(new GridLayout(0, 1, 0, 0));
+
+		ConsoleOutput.createGui();
 
 		JButton btnFileChoose = new JButton("Choose Image");
+		Main.add(btnFileChoose);
 		btnFileChoose.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
 				JFileChooser fileChooser = new JFileChooser();
@@ -209,89 +250,6 @@ public class ImageRecog {
 				lastBrowseLoc = fileChooser.getCurrentDirectory().getAbsolutePath();
 			}
 		});
-		btnFileChoose.setBounds(10, 11, 424, 43);
-		frmImageRecognizer.getContentPane().add(btnFileChoose);
-
-		lblPath = new JLabel("Nothing Selected");
-		lblPath.setHorizontalAlignment(SwingConstants.CENTER);
-		lblPath.setBounds(10, 65, 424, 14);
-		frmImageRecognizer.getContentPane().add(lblPath);
-
-		btnFind = new JButton("What is this?");
-		btnFind.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent arg0) {
-				if(lblPath.getText() != "Nothing Selected") {
-					lblOut.setText("Processing...");
-					Thread th = new Thread() {
-						public void run() {
-							matchPer.clear();
-							imgComp = null;
-							imgComp = (new File("C:\\ImageRecognizer")).listFiles();
-							if(method1.isSelected()){
-								try {
-									in2 = fitBinaryImage(ImageIO.read(new File(lblPath.getText())));
-								} catch (IOException e) {
-									e.printStackTrace();
-								}
-							}
-							if(method2.isSelected()) {
-								try {
-									in2 = fitCannyEdges(ImageIO.read(new File(lblPath.getText())));
-								} catch (IOException e) {
-									e.printStackTrace();
-								}
-							}
-							for(File folder : imgComp){
-								if(folder.listFiles().length != 0){
-									matchPer.put(folder.getName(), (double) 0);
-									for(File img : folder.listFiles()){
-										if(method1.isSelected()){
-											try {
-												in = fitBinaryImage(ImageIO.read(img));
-											} catch (IOException e) {
-												e.printStackTrace();
-											}
-										}
-										if(method2.isSelected()) {
-											try {
-												in = fitCannyEdges(ImageIO.read(img));
-											} catch (IOException e) {
-												e.printStackTrace();
-											}
-										}
-										ImageCompare ic = new ImageCompare(in, in2);
-										ic.setParameters(sldQual.getValue(), sldQual.getValue(), 1, sldQual.getValue()*2);
-										ic.compare();
-										double diff = Math.round(ic.difference());
-										System.out.println(img.getName() + " " + diff + "%");
-										matchPer.replace(folder.getName(), matchPer.get(folder.getName()) + diff);
-									}
-									System.out.println("!!" + folder.getName() + " total " + Math.round(matchPer.get(folder.getName())/folder.listFiles().length) + "%!!");
-									System.out.println("");
-									matchPer.replace(folder.getName(), (double) Math.round(matchPer.get(folder.getName())/folder.listFiles().length));
-								}
-							}
-							
-							Entry<String,Double> maxEntry = null;
-							for(Entry<String,Double> entry : matchPer.entrySet()) {
-								if (maxEntry == null || entry.getValue() < maxEntry.getValue()) {
-									maxEntry = entry;
-								}
-							}
-							lblOut.setText(maxEntry.getKey());
-							System.out.println("Image Given is Most Likely: " + maxEntry.getKey());
-							System.out.println("");
-							System.out.println("---------------------------------------------------");
-							System.out.println("");
-						}
-					};
-					th.setPriority(Thread.MAX_PRIORITY);
-					th.start();
-				}
-			}
-		});
-		btnFind.setBounds(10, 167, 424, 43);
-		frmImageRecognizer.getContentPane().add(btnFind);
 
 		new FileDrop(btnFileChoose, new FileDrop.Listener() {
 			public void filesDropped(java.io.File[] files) {
@@ -307,57 +265,256 @@ public class ImageRecog {
 			} // end filesDropped
 		}); // end FileDrop.Listener
 
-		lblStaticText1 = new JLabel("The image given is...");
-		lblStaticText1.setHorizontalAlignment(SwingConstants.CENTER);
-		lblStaticText1.setBounds(10, 221, 424, 14);
-		frmImageRecognizer.getContentPane().add(lblStaticText1);
+		lblPath = new JLabel("Nothing Selected");
+		Main.add(lblPath);
+		lblPath.setHorizontalAlignment(SwingConstants.CENTER);
 
-		lblOut = new JLabel("Not Run Yet");
-		lblOut.setHorizontalAlignment(SwingConstants.CENTER);
-		lblOut.setBounds(10, 246, 424, 14);
-		frmImageRecognizer.getContentPane().add(lblOut);
+		verticalStrut = Box.createVerticalStrut(20);
+		Main.add(verticalStrut);
 
-		method1 = new JRadioButton("Method 1 (More General Shape)");
-		method1.addActionListener(new ActionListener() {
+		progressBar = new JProgressBar();
+		Main.add(progressBar);
+
+		lblDone = new JLabel("0/0 images compared");
+		Main.add(lblDone);
+		lblDone.setHorizontalAlignment(SwingConstants.CENTER);
+
+		btnFind = new JButton("What is this?");
+		Main.add(btnFind);
+		btnFind.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
-				method1.setSelected(true);
-				method2.setSelected(false);
+				if(lblPath.getText() != "Nothing Selected") {
+					Thread th = new Thread() {
+						public void run() {
+							File fol = new File("C:" + File.separator + "ImageRecognizer");
+							if(fol.exists()){
+								if(fol.isDirectory()){
+									matchPer.clear();
+									imgComp = null;
+									imgComp = fol.listFiles();
+									if(imgComp.length != 0){
+										lblOut.setText("Processing...");
+										oin = null;
+										oin2 = null;
+										if(method1.isSelected()){
+											try {
+												in2 = fitBinaryImage(ImageIO.read(new File(lblPath.getText())));
+											} catch (IOException e) {
+												e.printStackTrace();
+											}
+										} else if(method2.isSelected()) {
+											try {
+												in2 = fitCannyEdges(ImageIO.read(new File(lblPath.getText())));
+											} catch (IOException e) {
+												e.printStackTrace();
+											}
+										}
+										if(method3.isSelected()) {
+											try {
+												oin2 = ImageIO.read(new File(lblPath.getText()));
+											} catch (IOException e) {
+												e.printStackTrace();
+											}
+										}
+
+										progressBar.setMinimum(0);
+										progressBar.setMaximum(0);
+
+										for(File f : imgComp) {
+											int s = f.listFiles().length;
+											if(s != 0) progressBar.setMaximum(progressBar.getMaximum() + s);
+										}
+
+										progressBar.setValue(0);
+
+										lblDone.setText("0/" + progressBar.getMaximum() + " images compared");
+
+										progressBar.setMaximum(progressBar.getMaximum() * 100);
+
+										for(File folder : imgComp){
+											if(folder.listFiles().length != 0){
+												matchPer.put(folder.getName(), (double) 0);
+												for(File img : folder.listFiles()){
+													if(method1.isSelected()){
+														try {
+															in = fitBinaryImage(ImageIO.read(img));
+														} catch (IOException e) {
+															e.printStackTrace();
+														}
+													} else if(method2.isSelected()) {
+														try {
+															in = fitCannyEdges(ImageIO.read(img));
+														} catch (IOException e) {
+															e.printStackTrace();
+														}
+													}
+													if(method3.isSelected()) {
+														try {
+															oin = ImageIO.read(img);
+														} catch (IOException e) {
+															e.printStackTrace();
+														}
+													}
+													ImageCompare ic = new ImageCompare(in, in2, in, in2);
+													ic.setDebugMode(sldDebug.getValue());
+													ic.setParameters(sldQual.getValue(), sldDif.getValue(), 50, method3.isSelected(), progressBar);
+													ic.compare();
+													double diff = Math.round(ic.difference());
+													System.out.println(img.getName() + " " + diff + "%");
+													matchPer.replace(folder.getName(), matchPer.get(folder.getName()) + diff);
+													String[] a = lblDone.getText().split("/");
+													int b = Integer.parseInt(a[0]);
+													b++;
+													lblDone.setText(b + "/" + a[1]);
+												}
+												System.out.println("!!" + folder.getName() + " total " + Math.round(matchPer.get(folder.getName())/folder.listFiles().length) + "%!!");
+												System.out.println("");
+												matchPer.replace(folder.getName(), (double) Math.round(matchPer.get(folder.getName())/folder.listFiles().length));
+											}
+										}
+
+										Entry<String,Double> maxEntry = null;
+										for(Entry<String,Double> entry : matchPer.entrySet()) {
+											if (maxEntry == null || entry.getValue() < maxEntry.getValue()) {
+												maxEntry = entry;
+											}
+										}
+										lblOut.setText(maxEntry.getKey());
+										System.out.println("Image Given is Most Likely: " + maxEntry.getKey());
+										System.out.println("");
+										System.out.println("---------------------------------------------------");
+										System.out.println("");
+									} else {
+										System.out.println("Error! No pictures found!");
+										System.out.println("");
+										System.out.println("---------------------------------------------------");
+										System.out.println("");
+									}
+								} else {
+									System.out.println("Error! Folder needed, not file!");
+									System.out.println("");
+									System.out.println("---------------------------------------------------");
+									System.out.println("");
+								}
+							} else {
+								System.out.println("Error! Folder not found!");
+								System.out.println("");
+								System.out.println("---------------------------------------------------");
+								System.out.println("");
+							}
+						}
+					};
+					th.setPriority(Thread.MAX_PRIORITY);
+					th.start();
+				}
 			}
 		});
-		method1.setBounds(10, 99, 213, 23);
-		frmImageRecognizer.getContentPane().add(method1);
+
+		lblStaticText1 = new JLabel("The image given is most likely...");
+		Main.add(lblStaticText1);
+		lblStaticText1.setHorizontalAlignment(SwingConstants.CENTER);
+
+		lblOut = new JLabel("Not Run Yet");
+		Main.add(lblOut);
+		lblOut.setHorizontalAlignment(SwingConstants.CENTER);
+
+		settingsPan = new JPanel();
+		tabbedPane.addTab("Settings", null, settingsPan, null);
+		settingsPan.setLayout(new GridLayout(0, 2, 0, 0));
+
+		optionPan = new JPanel();
+		settingsPan.add(optionPan);
+		optionPan.setLayout(new BorderLayout(0, 0));
+
+		method1 = new JRadioButton("Method 1 (More General Shape)");
+		optionPan.add(method1, BorderLayout.NORTH);
 
 		method2 = new JRadioButton("Method 2 (More Precise Shape)");
+		optionPan.add(method2, BorderLayout.CENTER);
+		method2.setSelected(true);
+
+		method3 = new JRadioButton("Compare Colour");
+		optionPan.add(method3, BorderLayout.SOUTH);
+		method3.setSelected(true);
+
+		JPanel comparePan = new JPanel();
+		settingsPan.add(comparePan);
+		comparePan.setLayout(new BorderLayout(0, 0));
+
+		lblStaticText2 = new JLabel("Comparison Quality");
+		comparePan.add(lblStaticText2, BorderLayout.NORTH);
+		lblStaticText2.setHorizontalAlignment(SwingConstants.CENTER);
+
+		lblQual = new JLabel("80% (80% is usually the best)");
+		comparePan.add(lblQual, BorderLayout.SOUTH);
+		lblQual.setHorizontalAlignment(SwingConstants.CENTER);
+
+		sldQual = new JSlider();
+		comparePan.add(sldQual, BorderLayout.CENTER);
+		sldQual.addChangeListener(new ChangeListener() {
+			public void stateChanged(ChangeEvent arg0) {
+				lblQual.setText(sldQual.getValue() + "% (80% is usually the best)");
+			}
+		});
+		sldQual.setValue(80);
+
+		diffPan = new JPanel();
+		settingsPan.add(diffPan);
+		diffPan.setLayout(new BorderLayout(0, 0));
+
+		JLabel lblDifferenceThreshold = new JLabel("Difference Threshold");
+		diffPan.add(lblDifferenceThreshold, BorderLayout.NORTH);
+		lblDifferenceThreshold.setHorizontalAlignment(SwingConstants.CENTER);
+
+		lblDif = new JLabel("1 (1 is usually the best)");
+		diffPan.add(lblDif, BorderLayout.SOUTH);
+		lblDif.setHorizontalAlignment(SwingConstants.CENTER);
+
+		sldDif = new JSlider();
+		diffPan.add(sldDif, BorderLayout.CENTER);
+		sldDif.addChangeListener(new ChangeListener() {
+			public void stateChanged(ChangeEvent arg0) {
+				lblDif.setText(sldDif.getValue() + " (1 is usually the best)");
+			}
+		});
+		sldDif.setValue(1);
+		sldDif.setMinimum(1);
+		sldDif.setMaximum(1000);
+
+		debugPan = new JPanel();
+		settingsPan.add(debugPan);
+		debugPan.setLayout(new BorderLayout(0, 0));
+
+		lblDe = new JLabel("0 (0 is off)");
+		debugPan.add(lblDe, BorderLayout.SOUTH);
+		lblDe.setHorizontalAlignment(SwingConstants.CENTER);
+
+		sldDebug = new JSlider();
+		debugPan.add(sldDebug, BorderLayout.CENTER);
+		sldDebug.addChangeListener(new ChangeListener() {
+			public void stateChanged(ChangeEvent arg0) {
+				int d = sldDebug.getValue();
+				lblDe.setText(d + " (0 is off)");
+				ConsoleOutput.setGuiVisible(d == 0 ? false : true);
+			}
+		});
+		sldDebug.setValue(0);
+		sldDebug.setMaximum(5);
+
+		lblDebugMode = new JLabel("Debug Mode");
+		debugPan.add(lblDebugMode, BorderLayout.NORTH);
+		lblDebugMode.setHorizontalAlignment(SwingConstants.CENTER);
 		method2.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				method1.setSelected(false);
 				method2.setSelected(true);
 			}
 		});
-		method2.setSelected(true);
-		method2.setBounds(10, 125, 213, 23);
-		frmImageRecognizer.getContentPane().add(method2);
-
-		lblStaticText2 = new JLabel("Comparison Quality");
-		lblStaticText2.setHorizontalAlignment(SwingConstants.CENTER);
-		lblStaticText2.setBounds(248, 103, 158, 14);
-		frmImageRecognizer.getContentPane().add(lblStaticText2);
-
-		lblQual = new JLabel("10 (10 is usually the best)");
-		lblQual.setHorizontalAlignment(SwingConstants.CENTER);
-		lblQual.setBounds(237, 140, 195, 16);
-		frmImageRecognizer.getContentPane().add(lblQual);
-
-		sldQual = new JSlider();
-		sldQual.addChangeListener(new ChangeListener() {
-			public void stateChanged(ChangeEvent arg0) {
-				lblQual.setText(sldQual.getValue() + " (10 is usually the best)");
+		method1.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) {
+				method1.setSelected(true);
+				method2.setSelected(false);
 			}
 		});
-		sldQual.setMinimum(1);
-		sldQual.setMaximum(30);
-		sldQual.setValue(10);
-		sldQual.setBounds(234, 125, 200, 16);
-		frmImageRecognizer.getContentPane().add(sldQual);
 	}
 }
