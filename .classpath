@@ -27,7 +27,7 @@
 	<classpathentry kind="lib" path="/home/dankrushen/Coding Stuff/boofcv-v0.22-libs - No Source/xstream-1.4.7.jar"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry kind="lib" path="/home/dankrushen/Coding Stuff/Console Window/Console.jar"/>
-	<classpathentry kind="lib" path="/home/dankrushen/.m2/repository/com/google/code/gson/gson/2.8.0/gson-2.8.0.jar">
+	<classpathentry kind="lib" path="/home/dankrushen/Coding Stuff/gson-2.8.1.jar">
 		<attributes>
 			<attribute name="maven.pomderived" value="true"/>
 			<attribute name="maven.groupId" value="com.google.code.gson"/>
