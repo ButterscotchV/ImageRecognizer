@@ -6,7 +6,6 @@ import java.io.*;
 import java.net.MalformedURLException;
 import java.awt.*;
 import java.awt.image.*;
-import com.sun.image.codec.jpeg.*;
 
 public class ImageCompare {
 
@@ -54,27 +53,22 @@ public class ImageCompare {
 	 **/
 
 	// constructor 1. use filenames
-	public ImageCompare(String file1, String file2, String ofile1, String ofile2) {
-		this(loadJPG(file1), loadJPG(file2), loadJPG(ofile1), loadJPG(ofile2));
+	public ImageCompare(String file1, String file2) {
+		this(loadJPG(file1), loadJPG(file2));
 	}
 
 	// constructor 2. use awt images.
-	public ImageCompare(Image img1, Image img2, Image oimg1, Image oimg2) {
-		this(imageToBufferedImage(img1), imageToBufferedImage(img2), imageToBufferedImage(oimg1), imageToBufferedImage(oimg2));
+	public ImageCompare(Image img1, Image img2) {
+		this(imageToBufferedImage(img1), imageToBufferedImage(img2));
 	}
 
 	// constructor 3. use buffered images. all roads lead to the same place. this place.
-	public ImageCompare(BufferedImage img1, BufferedImage img2, BufferedImage oimg1, BufferedImage oimg2) {
-		this.img1 = null;
-		this.img2 = null;
+	public ImageCompare(BufferedImage img1, BufferedImage img2) {
 		BufferedImage[] img = sizeImages(img1, img2);
 		this.img1 = img[0];
 		this.img2 = img[1];
-		this.oimg1 = null;
-		this.oimg2 = null;
-		BufferedImage[] oimg = sizeImages(oimg1, oimg2);
-		this.oimg1 = oimg[0];
-		this.oimg2 = oimg[1];
+		this.oimg1 = img[0];
+		this.oimg2 = img[1];
 		/*
 		 * Un-Note this to auto resize images bigger than 1000 for the height
 		 * Note: Currently only does this is the image's height is bigger than 1000, and always makes them into squares
@@ -270,7 +264,7 @@ public class ImageCompare {
 			for (int x = 0; x < blocksx; x++) {
 				totalXaY++;
 				if (debugMode == 5) System.out.println(totalXaY + " total X and Y");
-				double totalPercent = (totalXaY / totalBlocks) * 100;
+				double totalPercent = (totalXaY / totalBlocks) * 50;
 				if (debugMode == 5) System.out.println((int) Math.round(totalPercent) + "% done image");
 				progressBar.setValue(origProgVal + (int) Math.round(totalPercent));
 				int newx2 = x*comparex;
@@ -281,20 +275,22 @@ public class ImageCompare {
 				if (debugMode == 4) System.out.println("X : Y = " + newx2 + " : " + newy2);
 				BufferedImage img1Sub = img1.getSubimage(newx2, newy2, comparex, comparey);
 				BufferedImage img2Sub = img2.getSubimage(newx2, newy2, comparex, comparey);
-				int b1 = getAverageBrightness(img1Sub);
-				int b2 = getAverageBrightness(img2Sub);
+				double b1 = getAverageBrightness(img1Sub);
+				double b2 = getAverageBrightness(img2Sub);
+				if (debugMode == 6) System.out.println("Average brightness total: " + b1 + ", Average brightness total 2: " + b2);
 				//int diff = Math.abs(b1 - b2);
-				double diff = (((double)Math.abs(b1 - b2))/128)*100;
+				double diff = ((b1 > b2 ? b1 - b2 : b2 - b1)/255)*100;
+				if (debugMode == 6) System.out.println("Brightness Difference: " + diff);
 				this.difference += diff;
-				if (diff >= factorA) { // the difference in a certain region has passed the threshold value of factorA
+				/*if (diff >= factorA) { // the difference in a certain region has passed the threshold value of factorA
 					this.match = false;
-				}
+				}*/
 				if (debugMode == 1) System.out.print((diff > factorA ? "X" : " "));
 				if (debugMode == 2) System.out.print(diff + (x < blocksx - 1 ? "," : ""));
 			}
 			if (debugMode > 0 && debugMode < 3) System.out.println("|");
 		}
-		this.difference = (this.difference/(blocksx*blocksy)*100);
+		this.difference = (this.difference/(blocksx*blocksy));
 		this.difference += this.difference*(this.factorD/100);
 		if (debugMode == 3) System.out.println("Difference: " + this.difference);
 		if(this.colour){
@@ -306,26 +302,56 @@ public class ImageCompare {
 			int dif = argb.length/2;
 			for(int e = 0; e < dif; e++) {
 				double diff = (((double) Math.abs(argb[e] - argb[e+dif]))/255)*100;
-				diff += diff*(this.factorD/100);
+				//diff += diff*(this.factorD/100);
 				this.difference2 += diff;
 			}
 			this.difference = (this.difference + (this.difference2/dif))/2;
+			this.difference2 = 0;
+			
+			if (debugMode == 3) System.out.println("Difference2: " + this.difference2);
 		}
-		if (debugMode == 3) System.out.println("Difference2: " + this.difference2);
-		this.difference2 = 0;
 	}
 
 	// returns a value specifying some kind of average brightness in the image.
-	protected int getAverageBrightness(BufferedImage img) {
+	protected double getAverageBrightness(BufferedImage img) {
+		/*
 		Raster r = img.getData();
-		int total = 0;
+		double total = 0;
 		for (int y = 0; y < r.getHeight(); y++) {
 			for (int x = 0; x < r.getWidth(); x++) {
-				total += r.getSample(r.getMinX() + x, r.getMinY() + y, 0);
+				total += r.getSampleDouble(r.getMinX() + x, r.getMinY() + y, 0);
 			}
 		}
-		int e = total/(r.getWidth()*r.getHeight());
-		return e;
+		return total/(r.getWidth()*r.getHeight());
+		*/
+		
+		//int a = 0;
+		double r = 0;
+		double g = 0;
+		double b = 0;
+
+		for (int y = 0; y < img.getHeight(); y++) {
+			for (int x = 0; x < img.getWidth(); x++) {
+				int pixel = img.getRGB(x, y);
+
+				//saveJPG(img, Integer.toHexString(pixel) + ".jpg");
+
+				//System.out.println(Integer.toHexString(pixel));
+
+				//a += (pixel >> 24) & 0xFF;
+				r += (pixel >> 16) & 0xFF;
+				g += (pixel >> 8) & 0xFF;
+				b += (pixel >> 0) & 0xFF;
+			}
+		}
+
+		double div = (img.getWidth()*img.getHeight());
+
+		//int total = ((a / div) << 24) | ((r / div) << 16) | ((g / div) << 8) | (b / div);
+		
+		//if (debugMode == 6) System.out.println("Average brightness: " + (r+b+g)/(div*3));
+
+		return (r+b+g)/(div*3);
 	}
 
 	protected int getAverageColour(BufferedImage img) {
@@ -351,9 +377,7 @@ public class ImageCompare {
 
 		int div = (img.getWidth()*img.getHeight());
 
-		int total = ((a / div) << 24) | ((r / div) << 16) | ((g / div) << 8) | (b / div);
-
-		return total;
+		return ((a / div) << 24) | ((r / div) << 16) | ((g / div) << 8) | (b / div);
 	}
 
 
@@ -373,40 +397,6 @@ public class ImageCompare {
 		Graphics2D g2 = bi.createGraphics();
 		g2.drawImage(img, null, null);
 		return bi;
-	}
-
-	// write a buffered image to a jpeg file.
-	protected static void saveJPG(Image img, String filename) {
-		BufferedImage bi = imageToBufferedImage(img);
-		FileOutputStream out = null;
-		try { 
-			out = new FileOutputStream(filename);
-		} catch (java.io.FileNotFoundException io) { 
-			System.out.println("File Not Found");
-			System.out.println("Creating file...");
-			try {
-				new File(filename).createNewFile();
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
-			System.out.println("Trying to output again...");
-			try { 
-				out = new FileOutputStream(filename);
-			} catch (java.io.FileNotFoundException io1) { 
-				System.out.println("File Not Found");
-				return;
-			}
-		}
-		JPEGImageEncoder encoder = JPEGCodec.createJPEGEncoder(out);
-		JPEGEncodeParam param = encoder.getDefaultJPEGEncodeParam(bi);
-		param.setQuality(0.8f,false);
-		encoder.setJPEGEncodeParam(param);
-		try { 
-			encoder.encode(bi); 
-			out.close(); 
-		} catch (java.io.IOException io) {
-			System.out.println("IOException"); 
-		}
 	}
 
 	// read a jpeg file into a buffered image

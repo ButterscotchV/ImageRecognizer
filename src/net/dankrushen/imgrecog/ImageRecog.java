@@ -309,12 +309,10 @@ public class ImageRecog {
 												e.printStackTrace();
 											}
 										}
-										if(method3.isSelected()) {
-											try {
-												oin2 = ImageIO.read(new File(lblPath.getText()));
-											} catch (IOException e) {
-												e.printStackTrace();
-											}
+										try {
+											oin2 = ImageIO.read(new File(lblPath.getText()));
+										} catch (IOException e) {
+											e.printStackTrace();
 										}
 
 										progressBar.setMinimum(0);
@@ -348,18 +346,21 @@ public class ImageRecog {
 															e.printStackTrace();
 														}
 													}
-													if(method3.isSelected()) {
-														try {
-															oin = ImageIO.read(img);
-														} catch (IOException e) {
-															e.printStackTrace();
-														}
+													try {
+														oin = ImageIO.read(img);
+													} catch (IOException e) {
+														e.printStackTrace();
 													}
-													ImageCompare ic = new ImageCompare(in, in2, in, in2);
+													ImageCompare ic = new ImageCompare(in, in2);
 													ic.setDebugMode(sldDebug.getValue());
-													ic.setParameters(sldQual.getValue(), sldDif.getValue(), 50, method3.isSelected(), progressBar);
+													ic.setParameters(sldQual.getValue(), sldDif.getValue(), 50, false, progressBar);
 													ic.compare();
-													double diff = Math.round(ic.difference());
+													ImageCompare ic2 = new ImageCompare(oin, oin2);
+													ic2.setDebugMode(sldDebug.getValue());
+													ic2.setParameters(sldQual.getValue(), sldDif.getValue(), 50, method3.isSelected(), progressBar);
+													ic2.compare();
+													if (sldDebug.getValue() == 7) System.out.println("ImageCompare 1 Diff: " + ic.difference() + ", ImageCompare 2 Diff: " + ic2.difference());
+													double diff = Math.round((ic.difference() + ic2.difference() + ic2.difference() + ic2.difference())/4);
 													System.out.println(img.getName() + " " + diff + "%");
 													matchPer.replace(folder.getName(), matchPer.get(folder.getName()) + diff);
 													String[] a = lblDone.getText().split("/");
@@ -499,7 +500,7 @@ public class ImageRecog {
 			}
 		});
 		sldDebug.setValue(0);
-		sldDebug.setMaximum(5);
+		sldDebug.setMaximum(7);
 
 		lblDebugMode = new JLabel("Debug Mode");
 		debugPan.add(lblDebugMode, BorderLayout.NORTH);
