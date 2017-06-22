@@ -26,5 +26,15 @@
 	<classpathentry kind="lib" path="/home/dankrushen/Coding Stuff/boofcv-v0.22-libs - No Source/xpp3_min-1.1.4c.jar"/>
 	<classpathentry kind="lib" path="/home/dankrushen/Coding Stuff/boofcv-v0.22-libs - No Source/xstream-1.4.7.jar"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry kind="lib" path="/home/dankrushen/Coding Stuff/Console Window/Console.jar"/>
+	<classpathentry kind="lib" path="/home/dankrushen/.m2/repository/com/google/code/gson/gson/2.8.0/gson-2.8.0.jar">
+		<attributes>
+			<attribute name="maven.pomderived" value="true"/>
+			<attribute name="maven.groupId" value="com.google.code.gson"/>
+			<attribute name="maven.artifactId" value="gson"/>
+			<attribute name="maven.version" value="2.8.0"/>
+			<attribute name="maven.scope" value="compile"/>
+		</attributes>
+	</classpathentry>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

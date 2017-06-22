@@ -1,10 +1,7 @@
 package net.dankrushen.imgrecog;
 
-import java.awt.BasicStroke;
-import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.EventQueue;
-import java.awt.Graphics2D;
 import javax.swing.JFrame;
 import javax.imageio.ImageIO;
 import javax.swing.JButton;
@@ -13,34 +10,17 @@ import javax.swing.JLabel;
 import javax.swing.SwingConstants;
 import javax.swing.UIManager;
 
-import boofcv.alg.feature.detect.edge.CannyEdge;
-import boofcv.alg.feature.detect.edge.EdgeContour;
-import boofcv.alg.feature.detect.edge.EdgeSegment;
-import boofcv.alg.filter.binary.BinaryImageOps;
-import boofcv.alg.filter.binary.Contour;
-import boofcv.alg.filter.binary.ThresholdImageOps;
-import boofcv.alg.misc.ImageStatistics;
-import boofcv.alg.shapes.ShapeFittingOps;
-import boofcv.factory.feature.detect.edge.FactoryEdgeDetectors;
-import boofcv.gui.feature.VisualizeShapes;
-import boofcv.io.image.ConvertBufferedImage;
-import boofcv.struct.ConnectRule;
-import boofcv.struct.PointIndex_I32;
-import boofcv.struct.image.ImageFloat32;
-import boofcv.struct.image.ImageUInt8;
-import georegression.struct.point.Point2D_I32;
 import net.iharder.dnd.FileDrop;
+import samson.stream.Console;
 
 import java.awt.event.ActionListener;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map.Entry;
 import java.awt.event.ActionEvent;
 import javax.swing.JRadioButton;
-import java.awt.Toolkit;
 import javax.swing.JSlider;
 import javax.swing.event.ChangeListener;
 import javax.swing.event.ChangeEvent;
@@ -54,8 +34,6 @@ import javax.swing.Box;
 
 public class ImageRecog {
 
-	private static double splitFraction = 0.05;
-	private static double minimumSideFraction = 0.1;
 	private String lastBrowseLoc = System.getProperty("user.home") + File.separator + "Pictures";
 	private File[] imgComp;
 	private HashMap<String, Double> matchPer = new HashMap<String, Double>();
@@ -89,94 +67,98 @@ public class ImageRecog {
 	private JPanel Main;
 	private Component verticalStrut;
 
-	//TODO Add a way to automatically sort the images. This can be done by finding similar images (using ImageCompare), and grouping them into folders. You can name the folders afterwards or I might add a way to also automatically name the folders using the Internet.
-
 	/*
 	 * Methods
 	 */
-	public static BufferedImage fitBinaryImage(BufferedImage in) {
 
-		ImageFloat32 input = ConvertBufferedImage.convertFromSingle(in, null, ImageFloat32.class);
+	public HashMap<String, Double> getPercentages(File image) {
+		HashMap<String, Double> percentages = new HashMap<String, Double>();
 
-		ImageUInt8 binary = new ImageUInt8(input.width,input.height);
-		BufferedImage polygon = new BufferedImage(input.width,input.height,BufferedImage.TYPE_INT_RGB);
+		File fol = new File(System.getProperty("user.home") + File.separator + "Pictures" + File.separator + "ImageRecognizer");
+		if(fol.exists()){
+			if(fol.isDirectory()){
+				imgComp = null;
+				imgComp = fol.listFiles();
+				if(imgComp.length != 0){
+					lblOut.setText("Processing...");
+					oin = null;
+					oin2 = null;
+					if(method1.isSelected()){
+						try {
+							in2 = OutlineMethods.fitBinaryImage(ImageIO.read(new File(lblPath.getText())));
+						} catch (IOException e) {
+							e.printStackTrace();
+						}
+					} else if(method2.isSelected()) {
+						try {
+							in2 = OutlineMethods.fitCannyEdges(ImageIO.read(new File(lblPath.getText())));
+						} catch (IOException e) {
+							e.printStackTrace();
+						}
+					}
+					try {
+						oin2 = ImageIO.read(image);
+					} catch (IOException e) {
+						e.printStackTrace();
+					}
 
-		// the mean pixel value is often a reasonable threshold when creating a binary image
-		double mean = ImageStatistics.mean(input);
+					for(File folder : imgComp){
+						if(folder.listFiles().length != 0){
+							for(File img : folder.listFiles()){
+								if(img != image) {
+									if(method1.isSelected()){
+										try {
+											in = OutlineMethods.fitBinaryImage(ImageIO.read(img));
+										} catch (IOException e) {
+											e.printStackTrace();
+										}
+									} else if(method2.isSelected()) {
+										try {
+											in = OutlineMethods.fitCannyEdges(ImageIO.read(img));
+										} catch (IOException e) {
+											e.printStackTrace();
+										}
+									}
+									try {
+										oin = ImageIO.read(img);
+									} catch (IOException e) {
+										e.printStackTrace();
+									}
+									ImageCompare ic = new ImageCompare(in, in2);
+									ic.setDebugMode(sldDebug.getValue());
+									ic.setParameters(sldQual.getValue(), sldDif.getValue(), 50, false, progressBar);
+									ic.compare();
+									ImageCompare ic2 = new ImageCompare(oin, oin2);
+									ic2.setDebugMode(sldDebug.getValue());
+									ic2.setParameters(sldQual.getValue(), sldDif.getValue(), 50, method3.isSelected(), progressBar);
+									ic2.compare();
+									double diff = Math.round((ic.difference() + ic2.difference() + ic2.difference() + ic2.difference())/4);
+									percentages.put(img.getName(), diff);
+								}
+							}
+						}
+					}
 
-		// create a binary image by thresholding
-		ThresholdImageOps.threshold(input, binary, (float) mean, true);
-
-		// reduce noise with some filtering
-		ImageUInt8 filtered = BinaryImageOps.erode8(binary, 1, null);
-		filtered = BinaryImageOps.dilate8(filtered, 1, null);
-
-		// Find the contour around the shapes
-		List<Contour> contours = BinaryImageOps.contour(filtered, ConnectRule.EIGHT,null);
-
-		// Fit a polygon to each shape and draw the results
-		Graphics2D g2 = polygon.createGraphics();
-		g2.setStroke(new BasicStroke(2));
-
-		g2.setColor(Color.WHITE);
-
-		for( Contour c : contours ) {
-			// Fit the polygon to the found external contour.  Note loop = true
-			List<PointIndex_I32> vertexes = ShapeFittingOps.fitPolygon(c.external,true,
-					splitFraction, minimumSideFraction,100);
-
-			//g2.setColor(Color.RED);
-			VisualizeShapes.drawPolygon(vertexes,true,g2);
-
-			// handle internal contours now
-			//g2.setColor(Color.BLUE);
-			for( List<Point2D_I32> internal : c.internal ) {
-				vertexes = ShapeFittingOps.fitPolygon(internal,true, splitFraction, minimumSideFraction,100);
-				VisualizeShapes.drawPolygon(vertexes,true,g2);
+				} else {
+					System.out.println("Error! No pictures found!");
+					System.out.println("");
+					System.out.println("---------------------------------------------------");
+					System.out.println("");
+				}
+			} else {
+				System.out.println("Error! Folder needed, not file!");
+				System.out.println("");
+				System.out.println("---------------------------------------------------");
+				System.out.println("");
 			}
+		} else {
+			System.out.println("Error! Folder not found!");
+			System.out.println("");
+			System.out.println("---------------------------------------------------");
+			System.out.println("");
 		}
 
-		return polygon;
-
-		//gui.addImage(polygon, "Binary Blob Contours");
-	}
-
-	public static BufferedImage fitCannyEdges(BufferedImage in) {
-
-		ImageFloat32 input = ConvertBufferedImage.convertFromSingle(in, null, ImageFloat32.class);
-
-		BufferedImage displayImage = new BufferedImage(input.width,input.height,BufferedImage.TYPE_INT_RGB);
-
-		// Finds edges inside the image
-		CannyEdge<ImageFloat32,ImageFloat32> canny =
-				FactoryEdgeDetectors.canny(2, true, true, ImageFloat32.class, ImageFloat32.class);
-
-		canny.process(input,0.1f,0.3f,null);
-		List<EdgeContour> contours = canny.getContours();
-
-		Graphics2D g2 = displayImage.createGraphics();
-		g2.setStroke(new BasicStroke(2));
-
-		g2.setColor(Color.WHITE);
-
-		// used to select colors for each line
-		//Random rand = new Random(234);
-
-		for( EdgeContour e : contours ) {
-			//g2.setColor(new Color(rand.nextInt()));
-
-			for(EdgeSegment s : e.segments ) {
-				// fit line segments to the point sequence.  Note that loop is false
-				List<PointIndex_I32> vertexes = ShapeFittingOps.fitPolygon(s.points,false,
-						splitFraction, minimumSideFraction,100);
-
-				VisualizeShapes.drawPolygon(vertexes, false, g2);
-			}
-		}
-
-		//gui.addImage(displayImage, "Canny Trace");
-
-		return displayImage;
+		return new HashMap<String, Double>();
 	}
 
 	public Entry<String,Double> getName() {
@@ -218,7 +200,6 @@ public class ImageRecog {
 	 */
 	private void initialize() {
 		frmImageRecognizer = new JFrame();
-		frmImageRecognizer.setIconImage(Toolkit.getDefaultToolkit().getImage(ImageRecog.class.getResource("/net/dankrushen/imgrecog/ImgRecogIcon.png")));
 		frmImageRecognizer.setTitle("Image Recognizer");
 		frmImageRecognizer.setBounds(100, 100, 400, 230);
 		frmImageRecognizer.setMinimumSize(new Dimension(400, 230));
@@ -233,7 +214,8 @@ public class ImageRecog {
 		tabbedPane.addTab("Main", null, Main, null);
 		Main.setLayout(new GridLayout(0, 1, 0, 0));
 
-		ConsoleOutput.createGui();
+		Console.initialize();
+		Console.hide();
 
 		JButton btnFileChoose = new JButton("Choose Image");
 		Main.add(btnFileChoose);
@@ -286,7 +268,10 @@ public class ImageRecog {
 				if(lblPath.getText() != "Nothing Selected") {
 					Thread th = new Thread() {
 						public void run() {
-							File fol = new File("C:" + File.separator + "ImageRecognizer");
+							System.out.println("Measured by percentage difference");
+							System.out.println("");
+
+							File fol = new File(System.getProperty("user.home") + File.separator + "Pictures" + File.separator + "ImageRecognizer");
 							if(fol.exists()){
 								if(fol.isDirectory()){
 									matchPer.clear();
@@ -298,13 +283,13 @@ public class ImageRecog {
 										oin2 = null;
 										if(method1.isSelected()){
 											try {
-												in2 = fitBinaryImage(ImageIO.read(new File(lblPath.getText())));
+												in2 = OutlineMethods.fitBinaryImage(ImageIO.read(new File(lblPath.getText())));
 											} catch (IOException e) {
 												e.printStackTrace();
 											}
 										} else if(method2.isSelected()) {
 											try {
-												in2 = fitCannyEdges(ImageIO.read(new File(lblPath.getText())));
+												in2 = OutlineMethods.fitCannyEdges(ImageIO.read(new File(lblPath.getText())));
 											} catch (IOException e) {
 												e.printStackTrace();
 											}
@@ -335,13 +320,13 @@ public class ImageRecog {
 												for(File img : folder.listFiles()){
 													if(method1.isSelected()){
 														try {
-															in = fitBinaryImage(ImageIO.read(img));
+															in = OutlineMethods.fitBinaryImage(ImageIO.read(img));
 														} catch (IOException e) {
 															e.printStackTrace();
 														}
 													} else if(method2.isSelected()) {
 														try {
-															in = fitCannyEdges(ImageIO.read(img));
+															in = OutlineMethods.fitCannyEdges(ImageIO.read(img));
 														} catch (IOException e) {
 															e.printStackTrace();
 														}
@@ -496,7 +481,7 @@ public class ImageRecog {
 			public void stateChanged(ChangeEvent arg0) {
 				int d = sldDebug.getValue();
 				lblDe.setText(d + " (0 is off)");
-				ConsoleOutput.setGuiVisible(d == 0 ? false : true);
+				Console.setVisible(d != 0);
 			}
 		});
 		sldDebug.setValue(0);
