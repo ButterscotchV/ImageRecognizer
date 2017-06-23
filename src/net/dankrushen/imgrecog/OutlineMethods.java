@@ -19,8 +19,8 @@ import boofcv.gui.feature.VisualizeShapes;
 import boofcv.io.image.ConvertBufferedImage;
 import boofcv.struct.ConnectRule;
 import boofcv.struct.PointIndex_I32;
-import boofcv.struct.image.ImageFloat32;
-import boofcv.struct.image.ImageUInt8;
+import boofcv.struct.image.GrayF32;
+import boofcv.struct.image.GrayU8;
 import georegression.struct.point.Point2D_I32;
 
 public class OutlineMethods {
@@ -29,9 +29,9 @@ public class OutlineMethods {
 	
 	public static BufferedImage fitBinaryImage(BufferedImage in) {
 
-		ImageFloat32 input = ConvertBufferedImage.convertFromSingle(in, null, ImageFloat32.class);
+		GrayF32 input = ConvertBufferedImage.convertFromSingle(in, null, GrayF32.class);
 
-		ImageUInt8 binary = new ImageUInt8(input.width,input.height);
+		GrayU8 binary = new GrayU8().createNew(input.width, input.height);
 		BufferedImage polygon = new BufferedImage(input.width,input.height,BufferedImage.TYPE_INT_RGB);
 
 		// the mean pixel value is often a reasonable threshold when creating a binary image
@@ -41,7 +41,7 @@ public class OutlineMethods {
 		ThresholdImageOps.threshold(input, binary, (float) mean, true);
 
 		// reduce noise with some filtering
-		ImageUInt8 filtered = BinaryImageOps.erode8(binary, 1, null);
+		GrayU8 filtered = BinaryImageOps.erode8(binary, 1, null);
 		filtered = BinaryImageOps.dilate8(filtered, 1, null);
 
 		// Find the contour around the shapes
@@ -76,13 +76,13 @@ public class OutlineMethods {
 
 	public static BufferedImage fitCannyEdges(BufferedImage in) {
 
-		ImageFloat32 input = ConvertBufferedImage.convertFromSingle(in, null, ImageFloat32.class);
+		GrayF32 input = ConvertBufferedImage.convertFromSingle(in, null, GrayF32.class);
 
 		BufferedImage displayImage = new BufferedImage(input.width,input.height,BufferedImage.TYPE_INT_RGB);
 
 		// Finds edges inside the image
-		CannyEdge<ImageFloat32,ImageFloat32> canny =
-				FactoryEdgeDetectors.canny(2, true, true, ImageFloat32.class, ImageFloat32.class);
+		CannyEdge<GrayF32,GrayF32> canny =
+				FactoryEdgeDetectors.canny(2, true, true, GrayF32.class, GrayF32.class);
 
 		canny.process(input,0.1f,0.3f,null);
 		List<EdgeContour> contours = canny.getContours();

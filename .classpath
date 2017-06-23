@@ -1,40 +1,22 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
-	<classpathentry kind="src" path="src"/>
-	<classpathentry kind="lib" path="/home/dankrushen/Coding Stuff/filedrop-1.1/filedrop.jar"/>
-	<classpathentry kind="lib" path="/home/dankrushen/Coding Stuff/boofcv-v0.22-libs - No Source/BoofCV-android-0.22.jar"/>
-	<classpathentry kind="lib" path="/home/dankrushen/Coding Stuff/boofcv-v0.22-libs - No Source/BoofCV-calibration-0.22.jar"/>
-	<classpathentry kind="lib" path="/home/dankrushen/Coding Stuff/boofcv-v0.22-libs - No Source/BoofCV-feature-0.22.jar"/>
-	<classpathentry kind="lib" path="/home/dankrushen/Coding Stuff/boofcv-v0.22-libs - No Source/BoofCV-geo-0.22.jar"/>
-	<classpathentry kind="lib" path="/home/dankrushen/Coding Stuff/boofcv-v0.22-libs - No Source/BoofCV-io-0.22.jar"/>
-	<classpathentry kind="lib" path="/home/dankrushen/Coding Stuff/boofcv-v0.22-libs - No Source/BoofCV-ip-0.22.jar"/>
-	<classpathentry kind="lib" path="/home/dankrushen/Coding Stuff/boofcv-v0.22-libs - No Source/BoofCV-jcodec-0.22.jar"/>
-	<classpathentry kind="lib" path="/home/dankrushen/Coding Stuff/boofcv-v0.22-libs - No Source/BoofCV-learning-0.22.jar"/>
-	<classpathentry kind="lib" path="/home/dankrushen/Coding Stuff/boofcv-v0.22-libs - No Source/BoofCV-openkinect-0.22.jar"/>
-	<classpathentry kind="lib" path="/home/dankrushen/Coding Stuff/boofcv-v0.22-libs - No Source/BoofCV-recognition-0.22.jar"/>
-	<classpathentry kind="lib" path="/home/dankrushen/Coding Stuff/boofcv-v0.22-libs - No Source/BoofCV-sfm-0.22.jar"/>
-	<classpathentry kind="lib" path="/home/dankrushen/Coding Stuff/boofcv-v0.22-libs - No Source/BoofCV-visualize-0.22.jar"/>
-	<classpathentry kind="lib" path="/home/dankrushen/Coding Stuff/boofcv-v0.22-libs - No Source/BoofCV-WebcamCapture-0.22.jar"/>
-	<classpathentry kind="lib" path="/home/dankrushen/Coding Stuff/boofcv-v0.22-libs - No Source/BoofCV-xuggler-0.22.jar"/>
-	<classpathentry kind="lib" path="/home/dankrushen/Coding Stuff/boofcv-v0.22-libs - No Source/core-0.29.jar"/>
-	<classpathentry kind="lib" path="/home/dankrushen/Coding Stuff/boofcv-v0.22-libs - No Source/ddogleg-0.9.jar"/>
-	<classpathentry kind="lib" path="/home/dankrushen/Coding Stuff/boofcv-v0.22-libs - No Source/dense64-0.29.jar"/>
-	<classpathentry kind="lib" path="/home/dankrushen/Coding Stuff/boofcv-v0.22-libs - No Source/equation-0.29.jar"/>
-	<classpathentry kind="lib" path="/home/dankrushen/Coding Stuff/boofcv-v0.22-libs - No Source/georegression-0.10.jar"/>
-	<classpathentry kind="lib" path="/home/dankrushen/Coding Stuff/boofcv-v0.22-libs - No Source/simple-0.29.jar"/>
-	<classpathentry kind="lib" path="/home/dankrushen/Coding Stuff/boofcv-v0.22-libs - No Source/xmlpull-1.1.3.1.jar"/>
-	<classpathentry kind="lib" path="/home/dankrushen/Coding Stuff/boofcv-v0.22-libs - No Source/xpp3_min-1.1.4c.jar"/>
-	<classpathentry kind="lib" path="/home/dankrushen/Coding Stuff/boofcv-v0.22-libs - No Source/xstream-1.4.7.jar"/>
-	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
-	<classpathentry kind="lib" path="/home/dankrushen/Coding Stuff/Console Window/Console.jar"/>
-	<classpathentry kind="lib" path="/home/dankrushen/Coding Stuff/gson-2.8.1.jar">
+	<classpathentry kind="src" output="target/classes" path="src">
 		<attributes>
+			<attribute name="optional" value="true"/>
 			<attribute name="maven.pomderived" value="true"/>
-			<attribute name="maven.groupId" value="com.google.code.gson"/>
-			<attribute name="maven.artifactId" value="gson"/>
-			<attribute name="maven.version" value="2.8.0"/>
-			<attribute name="maven.scope" value="compile"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry kind="output" path="bin"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER">
+		<attributes>
+			<attribute name="maven.pomderived" value="true"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="con" path="org.eclipse.m2e.MAVEN2_CLASSPATH_CONTAINER">
+		<attributes>
+			<attribute name="maven.pomderived" value="true"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="lib" path="libs/Console.jar"/>
+	<classpathentry kind="lib" path="libs/filedrop.jar"/>
+	<classpathentry kind="output" path="target/classes"/>
 </classpath>
